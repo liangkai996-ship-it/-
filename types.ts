@@ -1,44 +1,126 @@
 
 export enum ModuleType {
+  HUB = 'HUB',                 // 顶级入口（作品馆）
+  PROJECT_ANALYSIS = 'ANALYSIS', // 项目分析
+  ORIGINAL_STORY = 'ORIGINAL',   // 原创故事
+  NOVEL_ADAPTATION = 'ADAPT',    // 小说改编
+  
   DASHBOARD = 'DASHBOARD',
+  NOVEL = 'NOVEL',
   CHARACTERS = 'CHARACTERS',
-  NOVEL = 'NOVEL', // New module
   OUTLINE = 'OUTLINE',
   PLOT = 'PLOT',
   SCRIPT = 'SCRIPT',
-  STORYBOARD = 'STORYBOARD',
+  DOCTOR = 'DOCTOR',
 }
 
+export enum ProductionStyle {
+  COMIC_DRAMA = 'COMIC_DRAMA',
+  MOTION_COMIC = 'MOTION_COMIC',
+  LIVE_ACTION = 'LIVE_ACTION'
+}
+
+export enum OriginalSubModule {
+  LOGLINE = 'LOGLINE',
+  CHARACTERS = 'CHARACTERS',
+  OUTLINE = 'OUTLINE',
+  PLOT = 'PLOT',
+  SCRIPT = 'SCRIPT'
+}
+
+export type ThemeMode = 'day' | 'night';
 export type AppLanguage = 'zh-CN' | 'zh-TW' | 'en' | 'ko' | 'ja';
 
 export enum ScriptFormat {
-  MOVIE = 'MOVIE', // 90min+
-  TV_SERIES = 'TV_SERIES', // 45min
-  MID_FORM_SERIES = 'MID_FORM_SERIES', // 15-20min (中剧)
-  SHORT_VIDEO = 'SHORT_VIDEO', // 1-3min (短剧/抖音)
-  DYNAMIC_COMIC = 'DYNAMIC_COMIC', // 动态漫
-  ANIMATION = 'ANIMATION', // 动漫
+  MOVIE = 'MOVIE',
+  TV_SERIES = 'TV_SERIES',
+  MID_FORM_SERIES = 'MID_FORM_SERIES',
+  SHORT_VIDEO = 'SHORT_VIDEO',
+  DYNAMIC_COMIC = 'DYNAMIC_COMIC',
+  ANIMATION = 'ANIMATION',
 }
 
-export interface CharacterVisuals {
-  clothing: string;
-  pose: string;
-  expression: string;
-  style?: string; // Added style field
-  image?: string; // Base64 image string
+export enum ScriptBlockType {
+  SCENE_HEADING = 'SCENE_HEADING',
+  ACTION = 'ACTION',
+  CHARACTER = 'CHARACTER',
+  DIALOGUE = 'DIALOGUE',
+  PARENTHETICAL = 'PARENTHETICAL',
+  TRANSITION = 'TRANSITION',
+}
+
+export enum ShotType {
+  EXTREME_LONG_SHOT = 'EXTREME_LONG_SHOT',
+  LONG_SHOT = 'LONG_SHOT',
+  FULL_SHOT = 'FULL_SHOT',
+  MEDIUM_SHOT = 'MEDIUM_SHOT',
+  CLOSE_UP = 'CLOSE_UP',
+  EXTREME_CLOSE_UP = 'EXTREME_CLOSE_UP',
+}
+
+export enum CameraAngle {
+  EYE_LEVEL = 'EYE_LEVEL',
+  LOW_ANGLE = 'LOW_ANGLE',
+  HIGH_ANGLE = 'HIGH_ANGLE',
+  DUTCH_ANGLE = 'DUTCH_ANGLE',
+  OVER_SHOULDER = 'OVER_SHOULDER',
+  BIRD_EYE = 'BIRD_EYE',
+}
+
+export enum CameraMovement {
+  STATIC = 'STATIC',
+  PAN = 'PAN',
+  TILT = 'TILT',
+  DOLLY = 'DOLLY',
+  TRACKING = 'TRACKING',
+  CRANE = 'CRANE',
+  HANDHELD = 'HANDHELD',
+  ZOOM = 'ZOOM',
+}
+
+export type AspectRatio = '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
+
+export interface StoryboardData {
+  shotType: ShotType;
+  cameraAngle: CameraAngle;
+  cameraMovement?: CameraMovement;
+  aspectRatio?: AspectRatio;
+  customFrameRatio?: number;
+  focalLength?: string;
+  visualDescription: string;
+  imagePrompt: string;
+  soundDesign?: string;
+  generatedImage?: string;
+  isLongTake?: boolean;
+  startFrameDescription?: string;
+  endFrameDescription?: string;
+  visualStyle?: string;
+}
+
+export interface ScriptBlock {
+  id: string;
+  type: ScriptBlockType;
+  content: string;
+  storyboard?: StoryboardData;
 }
 
 export interface Character {
   id: string;
   name: string;
-  role: string; // Protagonist, Antagonist, Supporting
+  role: string;
   age: string;
   description: string;
   goal: string;
   conflict: string;
   arc: string;
-  mapPosition?: { x: number; y: number };
-  visualDesign?: CharacterVisuals;
+  mapPosition: { x: number; y: number };
+  visualDesign?: {
+    clothing: string;
+    pose: string;
+    expression: string;
+    style?: string;
+    image?: string;
+  };
 }
 
 export interface CharacterRelationship {
@@ -54,152 +136,83 @@ export interface OutlineScene {
   summary: string;
 }
 
+export interface DoctorAnalysis {
+  emotions: number[];
+  infoDensity: number[];
+  plotDensity: number[];
+  diagnosis: string;
+  suggestions: Array<{
+    id: string;
+    target: string;
+    advice: string;
+    revision: string;
+  }>;
+}
+
 export interface OutlineSection {
   id: string;
-  title: string; // e.g., Act 1, Inciting Incident, Episode 1
-  content: string;
+  title: string;
   tips: string;
+  content: string;
   scenes: OutlineScene[];
+  doctorAnalysis?: DoctorAnalysis;
 }
 
 export interface PlotEvent {
   id: string;
-  actId?: string; // Links to OutlineSection.id
+  actId?: string;
+  plotline: string;
   title: string;
   description: string;
-  tensionLevel: number; // 1-10
-}
-
-export enum ScriptBlockType {
-  SCENE_HEADING = 'SCENE_HEADING',
-  ACTION = 'ACTION',
-  CHARACTER = 'CHARACTER',
-  DIALOGUE = 'DIALOGUE',
-  PARENTHETICAL = 'PARENTHETICAL',
-  TRANSITION = 'TRANSITION',
-}
-
-export enum ShotType {
-  EXTREME_LONG_SHOT = 'ELS', // 大远景
-  LONG_SHOT = 'LS', // 远景
-  FULL_SHOT = 'FS', // 全景
-  MEDIUM_SHOT = 'MS', // 中景
-  CLOSE_UP = 'CU', // 特写
-  EXTREME_CLOSE_UP = 'ECU', // 大特写
-}
-
-export enum CameraAngle {
-  EYE_LEVEL = 'EYE', // 平视
-  LOW_ANGLE = 'LOW', // 仰视
-  HIGH_ANGLE = 'HIGH', // 俯视
-  DUTCH_ANGLE = 'DUTCH', // 倾斜
-  OVER_SHOULDER = 'OTS', // 过肩
-  BIRD_EYE = 'BIRD', // 鸟瞰
-}
-
-export enum CameraMovement {
-  STATIC = 'STATIC', // 固定
-  PAN = 'PAN', // 摇摄
-  TILT = 'TILT', // 俯仰
-  DOLLY = 'DOLLY', // 推拉
-  TRACKING = 'TRACKING', // 跟随
-  CRANE = 'CRANE', // 升降
-  HANDHELD = 'HANDHELD', // 手持
-  ZOOM = 'ZOOM', // 变焦
-}
-
-export type AspectRatio = '16:9' | '9:16' | '1:1' | '4:3' | '3:4';
-
-export interface StoryboardData {
-  shotNumber?: number;
-  shotType: ShotType;
-  cameraAngle: CameraAngle;
-  cameraMovement?: CameraMovement;
-  focalLength?: string; // e.g., "35mm", "85mm", "Wide Angle"
-  
-  aspectRatio?: AspectRatio; // String for API (e.g., "16:9")
-  customFrameRatio?: number; // Numeric for UI Slider (e.g., 1.77)
-  
-  visualStyle?: string; // Style override for specific shots
-
-  visualDescription: string; // Detailed visual description for the artist/camera
-  imagePrompt?: string; // AI Image Generation Prompt
-  generatedImage?: string; // Base64 image string
-  
-  // Sound & Dialogue Hints
-  soundDesign?: string; // Music, SFX
-  dialogueSnippet?: string; // Key dialogue line for this shot
-
-  // Long Take Support
-  isLongTake?: boolean;
-  startFrameDescription?: string;
-  endFrameDescription?: string;
-}
-
-export interface ScriptBlock {
-  id: string;
-  type: ScriptBlockType;
-  content: string;
-  storyboard?: StoryboardData;
-}
-
-export interface MarketAnalysis {
-  targetAudience: string; // 受众分析
-  marketPositioning: string; // 市场定位/对标
-  commercialsellingPoints: string; // 商业卖点
-}
-
-export interface NovelAnalysis {
-  summary: string; // Core summary
-  characters: { name: string; role: string; trait: string }[]; // Extracted characters
-  storylines: string[]; // Key plot points/storylines
-  themes: string[]; // Core themes
+  tensionLevel: number;
 }
 
 export interface NovelChapter {
   id: string;
   title: string;
   content: string;
-  convertedBlocks?: ScriptBlock[]; // Stores the temp converted script
-  analysis?: NovelAnalysis; // New analysis data
+  convertedBlocks: ScriptBlock[];
+  analysis?: {
+    summary: string;
+    themes: string[];
+    characters: Array<{ name: string; role: string; trait: string }>;
+    storylines: string[];
+    events: Array<{ title: string; description: string; tensionLevel: number }>;
+  };
 }
 
 export interface ProjectData {
+  id: string;
   title: string;
   logline: string;
   genre: string;
-  scriptFormat?: ScriptFormat; // New field for format selection
-  marketAnalysis: MarketAnalysis;
+  coverImage?: string; // Base64 or URL
+  updatedAt: number;
+  productionStyle?: ProductionStyle;
+  scriptFormat?: ScriptFormat;
+  marketAnalysis: {
+    targetAudience: string;
+    marketPositioning: string;
+    commercialsellingPoints: string;
+  };
   novelChapters: NovelChapter[];
   characters: Character[];
   relationships: CharacterRelationship[];
-  
-  totalOutline: string; // New field for the macro story summary
-  outline: OutlineSection[]; // Breakdown into episodes/acts
-  
+  totalOutline: string;
+  outline: OutlineSection[];
   plotEvents: PlotEvent[];
   script: ScriptBlock[];
 }
 
-// AI Synchronization Types
-export type ProjectActionType = 
-  | 'ADD_CHARACTER' 
-  | 'ADD_CHARACTERS_BATCH' // New: Batch add characters
-  | 'UPDATE_RELATIONSHIPS' // New: Update relationship map
-  | 'UPDATE_OUTLINE_SECTION' 
-  | 'ADD_PLOT_EVENT' 
-  | 'UPDATE_LOGLINE'
-  | 'UPDATE_TITLE';
-
 export interface ProjectAction {
-  type: ProjectActionType;
-  data: any; // Dynamic data based on type
-  description: string; // Description of the action for the UI
+  type: 'ADD_CHARACTER' | 'ADD_CHARACTERS_BATCH' | 'UPDATE_RELATIONSHIPS' | 'UPDATE_OUTLINE_SECTION' | 'UPDATE_LOGLINE' | 'ADD_PLOT_EVENT';
+  description: string;
+  data: any;
 }
 
 export interface AIMessage {
   role: 'user' | 'model';
   text: string;
-  actions?: ProjectAction[]; // Changed from optional single action to optional array of actions
-  actionStatuses?: { [key: number]: 'pending' | 'applied' | 'ignored' }; // Track status by index
+  actions?: ProjectAction[];
+  actionStatuses?: { [key: number]: 'pending' | 'applied' | 'ignored' };
 }

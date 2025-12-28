@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>InkFlow Script AI</title>
+    <title>神笔马良 - 智能剧本创作平台</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&family=Courier+Prime&display=swap" rel="stylesheet">
     <script>
@@ -17,20 +18,22 @@
             },
             colors: {
               ink: {
-                50: '#f9fafb',
-                100: '#f3f4f6',
-                200: '#e5e7eb',
-                300: '#d1d5db',
-                400: '#9ca3af',
-                500: '#6b7280',
-                600: '#4b5563',
-                700: '#374151',
-                800: '#1f2937',
-                900: '#111827',
+                50: 'var(--ink-50)',
+                100: 'var(--ink-100)',
+                200: 'var(--ink-200)',
+                300: 'var(--ink-300)',
+                400: 'var(--ink-400)',
+                500: 'var(--ink-500)', 
+                600: 'var(--ink-600)',
+                700: 'var(--ink-700)',
+                800: 'var(--ink-800)',
+                900: 'var(--ink-900)',
+                950: 'var(--ink-950)',
               },
               accent: {
-                500: '#10b981', // Emerald
-                600: '#059669',
+                400: 'var(--accent-400)',
+                500: 'var(--accent-500)', 
+                600: 'var(--accent-600)',
               }
             }
           }
@@ -38,36 +41,103 @@
       }
     </script>
     <style>
-      /* Custom scrollbar for cleaner look */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+      :root {
+        /* Night Mode (Tech-Noir) */
+        --ink-50: #f8fafc;   /* 最淡色 */
+        --ink-100: #f1f5f9;  /* 正文色 */
+        --ink-200: #cbd5e1;  /* 辅助文字 */
+        --ink-300: #64748b;  /* 禁用色 */
+        --ink-400: #475569;  /* 边框色 */
+        --ink-500: #334155;
+        --ink-600: #1e293b;
+        --ink-700: #0f172a;
+        --ink-800: #020617;  /* 卡片底色 */
+        --ink-900: #020617;  /* 侧边栏 */
+        --ink-950: #020617;  /* 页面底色 */
+        --accent-400: #34d399;
+        --accent-500: #10b981;
+        --accent-600: #059669;
+        --glass-bg: rgba(15, 23, 42, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.05);
+        --shadow-main: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
       }
-      ::-webkit-scrollbar-track {
-        background: transparent;
+
+      .theme-day {
+        /* Day Mode (E-Ink Paper) */
+        --ink-50: #020617;   /* 最深色（映射反转） */
+        --ink-100: #111827;  /* 主要标题 */
+        --ink-200: #374151;  /* 正文 */
+        --ink-300: #4b5563;  /* 辅助 */
+        --ink-400: #6b7280;  /* 较淡文字 */
+        --ink-500: #9ca3af;
+        --ink-600: #d1d5db;  /* 辅助边框 */
+        --ink-700: #e5e7eb;  /* 边框 */
+        --ink-800: #f3f4f6;  /* 卡片底色 */
+        --ink-900: #ffffff;  /* 侧边栏/浮层 */
+        --ink-950: #fcfaf7;  /* 温暖页面底色 */
+        --accent-400: #059669;
+        --accent-500: #065f46;
+        --accent-600: #064e3b;
+        --glass-bg: rgba(255, 255, 255, 0.95);
+        --glass-border: rgba(0, 0, 0, 0.1);
+        --shadow-main: 0 10px 40px rgba(0, 0, 0, 0.08);
       }
-      ::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
+
+      body {
+        background: var(--ink-950);
+        color: var(--ink-100);
+        transition: background 0.4s ease, color 0.4s ease;
       }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
+
+      .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--shadow-main);
+        transition: all 0.3s ease;
       }
+      
+      .theme-night .glass-card:hover {
+        border-color: rgba(16, 185, 129, 0.2);
+      }
+
+      /* 重置所有输入框在白天模式下的对比度 */
+      .theme-day input, .theme-day textarea, .theme-day select {
+        color: var(--ink-100) !important;
+      }
+      .theme-day ::placeholder {
+        color: var(--ink-400) !important;
+      }
+
+      /* 科技感动画 */
+      @keyframes scan {
+        0% { transform: translateY(-100%); }
+        100% { transform: translateY(100%); }
+      }
+      .scan-line {
+        background: linear-gradient(to bottom, transparent, var(--accent-400), transparent);
+        height: 100px;
+        width: 100%;
+        position: absolute;
+        animation: scan 4s linear infinite;
+        pointer-events: none;
+        opacity: 0.1;
+      }
+      .theme-day .scan-line { display: none; }
     </style>
   <script type="importmap">
 {
   "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0"
   }
 }
 </script>
 </head>
-  <body class="bg-ink-50 text-ink-900 font-sans antialiased overflow-hidden h-screen">
+  <body class="font-sans antialiased overflow-hidden h-screen theme-night">
     <div id="root"></div>
-    <script type="module"src="/index.tsx"></script>
   </body>
 </html>

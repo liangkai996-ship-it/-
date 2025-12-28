@@ -1,8 +1,23 @@
 
 import React, { useState } from 'react';
-import { ProjectData, NovelChapter, ScriptBlock, ScriptBlockType, AppLanguage } from '../../types';
+import { ProjectData, NovelChapter, ScriptBlock, ScriptBlockType, AppLanguage, Character, PlotEvent } from '../../types';
 import { GeminiService } from '../../services/geminiService';
-import { Plus, Trash2, Wand2, ArrowRight, BookText, FileText, CheckCircle2, User, Search, List, LayoutTemplate, MessageSquare, Clapperboard } from 'lucide-react';
+import { 
+  Plus, 
+  Trash2, 
+  Wand2, 
+  ArrowRight, 
+  BookText, 
+  Users, 
+  Clapperboard,
+  Workflow,
+  Zap,
+  GitMerge,
+  ChevronRight,
+  RefreshCw,
+  Activity,
+  Flame
+} from 'lucide-react';
 import { getTranslation } from '../../utils/translations';
 
 interface NovelAdaptationProps {
@@ -11,40 +26,29 @@ interface NovelAdaptationProps {
   language: AppLanguage;
 }
 
-type TabType = 'edit' | 'analysis';
-type PreviewMode = 'text' | 'structure';
+type TabType = 'edit' | 'analysis' | 'structure_view';
+type MetaView = 'script' | 'characters' | 'storylines' | 'events';
 
 export const NovelAdaptationModule: React.FC<NovelAdaptationProps> = ({ data, update, language }) => {
   const t = getTranslation(language);
   const [activeChapterId, setActiveChapterId] = useState<string | null>(
     data.novelChapters.length > 0 ? data.novelChapters[0].id : null
   );
-  const [isConverting, setIsConverting] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('edit');
-  const [previewMode, setPreviewMode] = useState<PreviewMode>('structure');
+  const [metaView, setMetaView] = useState<MetaView>('script');
 
   const activeChapter = data.novelChapters.find(c => c.id === activeChapterId);
 
   const addChapter = () => {
     const newChapter: NovelChapter = {
       id: crypto.randomUUID(),
-      title: `${t.novel.title} ${data.novelChapters.length + 1}`,
+      title: `新章节 ${data.novelChapters.length + 1}`,
       content: '',
       convertedBlocks: []
     };
-    const updatedChapters = [...data.novelChapters, newChapter];
-    update({ novelChapters: updatedChapters });
+    update({ novelChapters: [...data.novelChapters, newChapter] });
     setActiveChapterId(newChapter.id);
-  };
-
-  const deleteChapter = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const updatedChapters = data.novelChapters.filter(c => c.id !== id);
-    update({ novelChapters: updatedChapters });
-    if (activeChapterId === id) {
-      setActiveChapterId(updatedChapters.length > 0 ? updatedChapters[0].id : null);
-    }
   };
 
   const updateChapter = (id: string, updates: Partial<NovelChapter>) => {
@@ -54,290 +58,369 @@ export const NovelAdaptationModule: React.FC<NovelAdaptationProps> = ({ data, up
     update({ novelChapters: updatedChapters });
   };
 
-  const handleAnalyze = async () => {
+  const handleFullAnalysis = async () => {
     if (!activeChapter || !activeChapter.content.trim()) return;
     setIsAnalyzing(true);
     try {
-      const result = await GeminiService.analyzeNovelText(activeChapter.content, language);
-      if (result) {
-        updateChapter(activeChapter.id, { analysis: result });
-        setActiveTab('analysis');
-      }
+      const [scriptBlocks, analysisResult] = await Promise.all([
+        GeminiService.adaptNovelToScript(activeChapter.content, language),
+        GeminiService.analyzeNovelText(activeChapter.content, language)
+      ]);
+      
+      updateChapter(activeChapter.id, { 
+        convertedBlocks: scriptBlocks,
+        analysis: analysisResult 
+      });
+      setMetaView('events'); // Default to events for adaptation focus
     } catch (e) {
-      alert("分析失败");
+      alert("分析失败，请稍后重试。");
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  const handleConvert = async () => {
-    if (!activeChapter || !activeChapter.content.trim()) return;
-    setIsConverting(true);
-    try {
-      const scriptBlocks = await GeminiService.adaptNovelToScript(activeChapter.content, language);
-      updateChapter(activeChapter.id, { convertedBlocks: scriptBlocks });
-      setPreviewMode('structure');
-    } catch (e) {
-      alert("转换失败");
-    } finally {
-      setIsConverting(false);
-    }
-  };
-
-  const handleImportToScript = () => {
-    if (!activeChapter || !activeChapter.convertedBlocks) return;
-    const newBlocks = activeChapter.convertedBlocks.map(b => ({
-      ...b,
-      id: crypto.randomUUID()
+  const syncCharactersToProject = () => {
+    if (!activeChapter?.analysis?.characters) return;
+    const newChars: Character[] = activeChapter.analysis.characters.map(ac => ({
+      id: crypto.randomUUID(),
+      name: ac.name,
+      role: ac.role,
+      age: '未知',
+      description: ac.trait,
+      goal: '',
+      conflict: '',
+      arc: '',
+      mapPosition: { x: Math.random() * 500, y: Math.random() * 500 }
     }));
-    update({ script: [...data.script, ...newBlocks] }, true);
-    alert("已导入到剧本");
+    update({ characters: [...data.characters, ...newChars] });
+    alert("人物已同步");
   };
 
-  const getClassForType = (type: ScriptBlockType) => {
-    switch (type) {
-      case ScriptBlockType.SCENE_HEADING: return "font-bold text-ink-900 bg-ink-200 py-1 px-2 mb-2 uppercase text-xs";
-      case ScriptBlockType.ACTION: return "text-ink-800 text-xs mb-2";
-      case ScriptBlockType.CHARACTER: return "font-bold text-ink-800 text-center mt-3 text-xs uppercase";
-      case ScriptBlockType.DIALOGUE: return "text-ink-800 text-center w-3/4 mx-auto text-xs mb-1";
-      case ScriptBlockType.PARENTHETICAL: return "text-ink-500 text--[10px] text-center italic";
-      default: return "text-xs mb-1";
-    }
+  const syncEventsToProject = () => {
+    if (!activeChapter?.analysis?.events) return;
+    const newEvents: PlotEvent[] = activeChapter.analysis.events.map(ae => ({
+      id: crypto.randomUUID(),
+      title: ae.title,
+      description: ae.description,
+      tensionLevel: ae.tensionLevel || 5,
+      plotline: 'main'
+    }));
+    update({ plotEvents: [...data.plotEvents, ...newEvents] });
+    alert("事件编排已同步至主工作流");
   };
 
-  const renderStructureView = (blocks: ScriptBlock[]) => {
-    const scenes: { heading: ScriptBlock | null; body: ScriptBlock[] }[] = [];
-    let currentScene: { heading: ScriptBlock | null; body: ScriptBlock[] } | null = null;
+  const renderMetaPanel = () => {
+    if (!activeChapter) return null;
 
-    blocks.forEach(block => {
-      if (block.type === ScriptBlockType.SCENE_HEADING) {
-        if (currentScene) scenes.push(currentScene);
-        currentScene = { heading: block, body: [] };
-      } else {
-        if (!currentScene) currentScene = { heading: null, body: [] };
-        currentScene.body.push(block);
-      }
-    });
-    if (currentScene) scenes.push(currentScene);
-
-    return (
-      <div className="space-y-6 pb-20">
-        {scenes.map((scene, idx) => {
-          const uniqueChars = Array.from(new Set(
-            scene.body.filter(b => b.type === ScriptBlockType.CHARACTER).map(b => b.content)
-          ));
-          const actionCount = scene.body.filter(b => b.type === ScriptBlockType.ACTION).length;
-          const dialogueCount = scene.body.filter(b => b.type === ScriptBlockType.DIALOGUE).length;
-          const total = actionCount + dialogueCount || 1;
-          const actionPercent = Math.round((actionCount / total) * 100);
-
-          return (
-            <div key={idx} className="bg-white rounded-xl shadow-sm border border-ink-200 overflow-hidden">
-              <div className="bg-ink-900 text-white px-4 py-3 flex items-center justify-between">
-                <div className="flex items-center gap-2 overflow-hidden">
-                  <span className="bg-accent-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">场景 {idx + 1}</span>
-                  <span className="font-bold text-sm truncate uppercase">{scene.heading?.content || '未知场景'}</span>
-                </div>
-              </div>
-
-              <div className="bg-ink-50 px-4 py-2 flex items-center justify-between border-b border-ink-100 text-[10px] text-ink-500">
-                 <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1"><Clapperboard size={10}/> {actionCount} 动作</span>
-                    <span className="flex items-center gap-1"><MessageSquare size={10}/> {dialogueCount} 对白</span>
-                 </div>
-                 <div className="flex items-center gap-1">
-                   <div className="w-16 h-1.5 bg-ink-200 rounded-full overflow-hidden flex">
-                      <div className="bg-blue-400 h-full" style={{ width: `${actionPercent}%` }}></div>
-                      <div className="bg-green-400 h-full" style={{ width: `${100 - actionPercent}%` }}></div>
-                   </div>
-                 </div>
-              </div>
-
-              <div className="p-4 space-y-3">
-                 {uniqueChars.length > 0 && (
-                   <div className="flex flex-wrap gap-1.5 mb-3">
-                      {uniqueChars.map((char, cIdx) => (
-                        <span key={cIdx} className="px-2 py-0.5 bg-ink-100 text-ink-600 rounded text-[10px] font-bold flex items-center gap-1">
-                           <User size={10} /> {char}
-                        </span>
-                      ))}
-                   </div>
-                 )}
-                 <div className="space-y-2 relative">
-                    <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-ink-100"></div>
-                    {scene.body.map((block, bIdx) => {
-                      if (block.type === ScriptBlockType.ACTION) {
-                        return (
-                          <div key={bIdx} className="pl-8 relative">
-                             <div className="absolute left-[9px] top-2 w-1.5 h-1.5 rounded-full bg-blue-300"></div>
-                             <div className="text-xs text-ink-700 leading-relaxed">{block.content}</div>
-                          </div>
-                        );
-                      }
-                      if (block.type === ScriptBlockType.DIALOGUE) {
-                        const charName = scene.body[bIdx - 1]?.type === ScriptBlockType.CHARACTER ? scene.body[bIdx-1].content : "???";
-                        return (
-                          <div key={bIdx} className="pl-8 relative mt-1">
-                             <div className="absolute left-[9px] top-2 w-1.5 h-1.5 rounded-full bg-green-300"></div>
-                             <div className="bg-ink-50 p-2 rounded-lg rounded-tl-none border border-ink-100 text-xs text-ink-800">
-                                <span className="font-bold text-ink-500 text-[10px] uppercase block mb-0.5">{charName}</span>
-                                {block.content}
-                             </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    })}
-                 </div>
-              </div>
+    switch (metaView) {
+      case 'characters':
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-[10px] font-bold text-accent-400 uppercase tracking-widest flex items-center gap-2">
+                <Users size={14}/> Extracted Personas
+              </h4>
+              <button 
+                onClick={syncCharactersToProject}
+                className="text-[9px] bg-accent-500/10 text-accent-400 border border-accent-500/30 px-2 py-1 rounded hover:bg-accent-500 hover:text-white transition-all uppercase font-bold"
+              >
+                同步人物
+              </button>
             </div>
-          );
-        })}
-      </div>
-    );
+            
+            {activeChapter.analysis?.characters ? (
+              <div className="space-y-3">
+                {activeChapter.analysis.characters.map((char: any, idx: number) => (
+                  <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-4 hover:border-accent-500/30 transition-all group">
+                    <input 
+                      value={char.name} 
+                      onChange={(e) => {
+                        const newChars = [...activeChapter.analysis!.characters];
+                        newChars[idx].name = e.target.value;
+                        updateChapter(activeChapter.id, { analysis: { ...activeChapter.analysis!, characters: newChars } });
+                      }}
+                      className="bg-transparent text-sm font-bold text-ink-100 mb-1 outline-none w-full focus:text-accent-400" 
+                    />
+                    <textarea 
+                      value={char.trait}
+                      onChange={(e) => {
+                        const newChars = [...activeChapter.analysis!.characters];
+                        newChars[idx].trait = e.target.value;
+                        updateChapter(activeChapter.id, { analysis: { ...activeChapter.analysis!, characters: newChars } });
+                      }}
+                      className="w-full bg-transparent text-[10px] text-ink-500 leading-relaxed outline-none resize-none h-12"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : <div className="text-center py-12 opacity-20 text-[10px] uppercase font-mono tracking-widest">No data</div>}
+          </div>
+        );
+
+      case 'events':
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-[10px] font-bold text-orange-400 uppercase tracking-widest flex items-center gap-2">
+                <Flame size={14}/> Extracted Events
+              </h4>
+              <button 
+                onClick={syncEventsToProject}
+                className="text-[9px] bg-orange-500/10 text-orange-400 border border-orange-500/30 px-2 py-1 rounded hover:bg-orange-500 hover:text-white transition-all uppercase font-bold"
+              >
+                同步事件
+              </button>
+            </div>
+
+            {activeChapter.analysis?.events ? (
+              <div className="space-y-3">
+                {activeChapter.analysis.events.map((event: any, idx: number) => (
+                  <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-4 hover:border-orange-500/30 transition-all group relative">
+                    <div className="flex justify-between items-start mb-2">
+                      <input 
+                        value={event.title}
+                        onChange={(e) => {
+                          const newEvents = [...activeChapter.analysis!.events];
+                          newEvents[idx].title = e.target.value;
+                          updateChapter(activeChapter.id, { analysis: { ...activeChapter.analysis!, events: newEvents } });
+                        }}
+                        className="bg-transparent text-sm font-bold text-ink-100 outline-none w-full mr-2 focus:text-orange-400"
+                      />
+                      <button 
+                        onClick={() => {
+                          const newEvents = activeChapter.analysis!.events.filter((_: any, i: number) => i !== idx);
+                          updateChapter(activeChapter.id, { analysis: { ...activeChapter.analysis!, events: newEvents } });
+                        }}
+                        className="opacity-0 group-hover:opacity-100 text-ink-600 hover:text-red-500 transition-all"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                    <textarea 
+                      value={event.description}
+                      onChange={(e) => {
+                        const newEvents = [...activeChapter.analysis!.events];
+                        newEvents[idx].description = e.target.value;
+                        updateChapter(activeChapter.id, { analysis: { ...activeChapter.analysis!, events: newEvents } });
+                      }}
+                      className="w-full bg-transparent text-[10px] text-ink-400 leading-relaxed outline-none resize-none h-12 mb-2"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Flame size={10} className="text-orange-500" />
+                      <input 
+                        type="range" min="1" max="10" 
+                        value={event.tensionLevel || 5} 
+                        onChange={(e) => {
+                          const newEvents = [...activeChapter.analysis!.events];
+                          newEvents[idx].tensionLevel = parseInt(e.target.value);
+                          updateChapter(activeChapter.id, { analysis: { ...activeChapter.analysis!, events: newEvents } });
+                        }}
+                        className="flex-1 h-1 bg-ink-800 rounded-full appearance-none cursor-pointer accent-orange-500" 
+                      />
+                      <span className="text-[8px] font-mono text-ink-600">{event.tensionLevel || 5}/10</span>
+                    </div>
+                  </div>
+                ))}
+                <button 
+                  onClick={() => {
+                    const newEvents = [...(activeChapter.analysis?.events || []), { title: '新事件', description: '', tensionLevel: 5 }];
+                    updateChapter(activeChapter.id, { analysis: { ...activeChapter.analysis!, events: newEvents } });
+                  }}
+                  className="w-full py-3 border border-dashed border-white/5 rounded-2xl text-[10px] font-bold text-ink-700 hover:text-orange-500 hover:border-orange-500/30 transition-all uppercase tracking-widest flex items-center justify-center gap-2"
+                >
+                  <Plus size={14} /> Add Event Beat
+                </button>
+              </div>
+            ) : <div className="text-center py-12 opacity-20 text-[10px] font-mono uppercase">Extracting...</div>}
+          </div>
+        );
+
+      case 'storylines':
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            <h4 className="text-[10px] font-bold text-purple-400 uppercase tracking-widest flex items-center gap-2">
+              <GitMerge size={14}/> Plot Threads
+            </h4>
+            {activeChapter.analysis?.storylines ? (
+              <div className="space-y-3">
+                {activeChapter.analysis.storylines.map((line: string, idx: number) => (
+                  <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-4 hover:border-purple-500/30 transition-all">
+                    <textarea 
+                      value={line}
+                      onChange={(e) => {
+                        const newLines = [...activeChapter.analysis!.storylines];
+                        newLines[idx] = e.target.value;
+                        updateChapter(activeChapter.id, { analysis: { ...activeChapter.analysis!, storylines: newLines } });
+                      }}
+                      className="w-full bg-transparent text-xs text-ink-300 leading-relaxed outline-none resize-none h-20"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : <div className="text-center py-12 opacity-20 text-[10px] font-mono uppercase">No lines</div>}
+          </div>
+        );
+
+      default: // script blocks
+        return (
+          <div className="space-y-4 animate-fadeIn">
+            <h4 className="text-[10px] font-bold text-ink-500 uppercase tracking-widest flex items-center gap-2">
+              <Clapperboard size={14}/> Adaptation Matrix Nodes
+            </h4>
+            {activeChapter.convertedBlocks.length > 0 ? (
+              <div className="space-y-3">
+                {activeChapter.convertedBlocks.map((b, i) => (
+                  <div key={i} className={`p-4 rounded-2xl border border-white/5 text-xs ${b.type === ScriptBlockType.SCENE_HEADING ? 'bg-accent-500/10 text-accent-400 font-bold border-accent-500/20' : 'text-ink-400'}`}>
+                     <div className="text-[8px] opacity-50 mb-1">{b.type}</div>
+                     {b.content}
+                  </div>
+                ))}
+              </div>
+            ) : <div className="text-center py-12 opacity-20 text-[10px] font-mono uppercase">Pending...</div>}
+          </div>
+        );
+    }
   };
 
   return (
-    <div className="flex h-full overflow-hidden">
-      <div className="w-64 bg-ink-50 border-r border-ink-200 flex flex-col shrink-0">
-        <div className="p-4 border-b border-ink-200 flex items-center justify-between">
-          <h2 className="font-bold text-ink-800 flex items-center gap-2">
-            <BookText size={18} /> {t.novel.title}
+    <div className="flex h-full overflow-hidden bg-ink-950">
+      {/* Left Sidebar */}
+      <div className="w-64 bg-ink-900 border-r border-white/5 flex flex-col shrink-0">
+        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+          <h2 className="font-bold text-ink-100 flex items-center gap-2 uppercase tracking-tighter text-sm">
+            <BookText size={18} className="text-accent-400" /> 原著库
           </h2>
-          <button onClick={addChapter} className="p-1 hover:bg-ink-200 rounded text-ink-600">
+          <button onClick={addChapter} className="p-1.5 hover:bg-white/5 rounded-lg text-accent-400 transition-colors bg-accent-500/10">
             <Plus size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {data.novelChapters.map(chapter => (
-            <div 
+            <button 
               key={chapter.id}
               onClick={() => setActiveChapterId(chapter.id)}
-              className={`p-3 rounded-lg cursor-pointer group flex items-center justify-between text-sm transition-colors
-                ${activeChapterId === chapter.id ? 'bg-white shadow-sm border border-ink-200 font-medium text-ink-900' : 'text-ink-600 hover:bg-ink-100'}
-              `}
+              className={`w-full p-4 rounded-2xl text-left transition-all group relative overflow-hidden
+                ${activeChapterId === chapter.id 
+                  ? 'bg-accent-500/10 border border-accent-500/30 shadow-lg' 
+                  : 'hover:bg-white/5 text-ink-500 border border-transparent'}`}
             >
-              <span className="truncate">{chapter.title}</span>
-              <button 
-                onClick={(e) => deleteChapter(chapter.id, e)}
-                className="opacity-0 group-hover:opacity-100 text-ink-400 hover:text-red-500 transition-opacity"
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
+              <div className={`font-bold truncate text-sm ${activeChapterId === chapter.id ? 'text-accent-400' : ''}`}>
+                {chapter.title}
+              </div>
+              {activeChapterId === chapter.id && <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent-500 shadow-[0_0_10px_#10b981]"></div>}
+            </button>
           ))}
-          {data.novelChapters.length === 0 && (
-            <div className="p-4 text-center text-xs text-ink-400">
-              {t.novel.addChapter}
-            </div>
-          )}
         </div>
       </div>
 
+      {/* Main Content Area */}
       {activeChapter ? (
-        <div className="flex-1 flex overflow-hidden">
-          <div className="flex-1 flex flex-col border-r border-ink-200 min-w-0 bg-white">
-             <div className="h-12 border-b border-ink-100 flex items-center justify-between px-4 bg-white shrink-0">
-               <div className="flex items-center gap-1 bg-ink-100 p-0.5 rounded-lg">
-                  <button onClick={() => setActiveTab('edit')} className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${activeTab === 'edit' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500 hover:text-ink-700'}`}>{t.novel.textEdit}</button>
-                  <button onClick={() => setActiveTab('analysis')} className={`px-3 py-1 rounded-md text-xs font-medium transition-all flex items-center gap-1 ${activeTab === 'analysis' ? 'bg-white text-ink-900 shadow-sm' : 'text-ink-500 hover:text-ink-700'}`}><Search size={12}/> {t.novel.analysis}</button>
-               </div>
-               <div className="flex items-center gap-2">
-                 <input value={activeChapter.title} onChange={(e) => updateChapter(activeChapter.id, { title: e.target.value })} className="font-bold text-ink-800 bg-transparent outline-none focus:text-accent-600 text-right w-40 text-sm" />
-               </div>
+        <div className="flex-1 flex flex-col overflow-hidden bg-ink-950 transition-colors duration-500">
+          <div className="h-16 border-b border-white/5 flex items-center justify-between px-8 bg-ink-900/30 backdrop-blur-md shrink-0 z-10">
+             <div className="flex gap-8">
+                <button 
+                  onClick={() => setActiveTab('edit')} 
+                  className={`text-sm font-bold pb-4 mt-4 transition-all relative
+                    ${activeTab === 'edit' ? 'text-accent-400' : 'text-ink-600 hover:text-ink-400'}`}
+                >
+                  章节处理
+                  {activeTab === 'edit' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-500 shadow-[0_0_10px_#10b981]"></div>}
+                </button>
+                <button 
+                  onClick={() => setActiveTab('structure_view')} 
+                  className={`text-sm font-bold pb-4 mt-4 transition-all relative
+                    ${activeTab === 'structure_view' ? 'text-accent-400' : 'text-ink-600 hover:text-ink-400'}`}
+                >
+                  结构映射图
+                  {activeTab === 'structure_view' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-500 shadow-[0_0_10px_#10b981]"></div>}
+                </button>
              </div>
-
-             {activeTab === 'edit' ? (
-               <>
-                <textarea value={activeChapter.content} onChange={(e) => updateChapter(activeChapter.id, { content: e.target.value })} className="flex-1 resize-none p-6 outline-none text-ink-700 leading-relaxed bg-ink-50/30 focus:bg-white transition-colors" placeholder="..." />
-                <div className="p-4 border-t border-ink-200 bg-white flex justify-end gap-3">
-                   <button onClick={handleAnalyze} disabled={isAnalyzing || !activeChapter.content} className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors text-xs font-medium disabled:opacity-50"><Search size={14} className={isAnalyzing ? "animate-spin" : ""} /> {t.novel.aiBreakdown}</button>
-                   <button onClick={handleConvert} disabled={isConverting || !activeChapter.content} className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-ink-800 to-ink-900 text-white rounded-lg shadow-md hover:opacity-90 transition-opacity text-xs font-medium disabled:opacity-50"><Wand2 size={14} className={isConverting ? "animate-spin" : ""} /> {t.novel.toScript}</button>
-                </div>
-               </>
-             ) : (
-               <div className="flex-1 overflow-y-auto p-6 bg-ink-50/30">
-                 {activeChapter.analysis ? (
-                   <div className="space-y-6">
-                      <div className="bg-white p-4 rounded-xl border border-ink-200 shadow-sm">
-                        <h3 className="text-xs font-bold text-ink-400 uppercase tracking-widest mb-2 flex items-center gap-2"><BookText size={14}/> 核心摘要 (Summary)</h3>
-                        <p className="text-sm text-ink-700 leading-relaxed">{activeChapter.analysis.summary}</p>
-                        <div className="mt-3 flex gap-2 flex-wrap">{activeChapter.analysis.themes?.map((tag, i) => (<span key={i} className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[10px] rounded-full border border-purple-100">#{tag}</span>))}</div>
-                      </div>
-                      <div>
-                        <h3 className="text-xs font-bold text-ink-400 uppercase tracking-widest mb-3 flex items-center gap-2"><User size={14}/> 主要角色 (Characters)</h3>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                           {activeChapter.analysis.characters.map((char, idx) => (
-                             <div key={idx} className="bg-white p-3 rounded-lg border border-ink-200 flex items-start gap-3 hover:border-accent-300 transition-colors">
-                                <div className="w-8 h-8 rounded-full bg-ink-100 flex items-center justify-center text-ink-500 font-serif font-bold shrink-0">{char.name[0]}</div>
-                                <div><div className="flex items-center gap-2 mb-1"><span className="font-bold text-ink-800 text-sm">{char.name}</span><span className="text-[10px] px-1.5 py-0.5 bg-ink-100 text-ink-500 rounded">{char.role}</span></div><p className="text-xs text-ink-500">{char.trait}</p></div>
-                             </div>
-                           ))}
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="text-xs font-bold text-ink-400 uppercase tracking-widest mb-3 flex items-center gap-2"><List size={14}/> 故事线 (Storylines)</h3>
-                        <div className="bg-white rounded-xl border border-ink-200 overflow-hidden">{activeChapter.analysis.storylines.map((line, idx) => (<div key={idx} className="p-3 border-b border-ink-100 last:border-0 flex gap-3 text-sm text-ink-700 hover:bg-ink-50"><span className="text-accent-500 font-mono font-bold">{String(idx + 1).padStart(2, '0')}</span>{line}</div>))}</div>
-                      </div>
-                   </div>
-                 ) : (
-                   <div className="h-full flex flex-col items-center justify-center text-ink-400">
-                      <Search size={48} className="mx-auto mb-4 opacity-20" />
-                      <button onClick={handleAnalyze} className="mt-4 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-medium hover:bg-indigo-100 transition-colors">开始分析</button>
-                   </div>
-                 )}
-               </div>
+             
+             {activeTab === 'edit' && (
+               <button 
+                  onClick={handleFullAnalysis} 
+                  disabled={isAnalyzing || !activeChapter.content}
+                  className="flex items-center gap-2 px-6 py-2 bg-accent-500 text-white rounded-xl text-xs font-bold hover:bg-accent-600 transition-all disabled:opacity-50 shadow-lg"
+                >
+                  {isAnalyzing ? <RefreshCw className="animate-spin" size={14} /> : <Zap size={14} />}
+                  启动 AI 全维度分析
+                </button>
              )}
           </div>
 
-          <div className="flex-1 flex flex-col bg-ink-100 min-w-0 border-l border-ink-200">
-            <div className="h-12 border-b border-ink-200 px-4 flex items-center justify-between bg-ink-50 shrink-0">
-               <div className="flex items-center gap-2 text-ink-600 font-medium text-sm">
-                 {previewMode === 'text' ? <FileText size={16} /> : <LayoutTemplate size={16} />}
-                 {previewMode === 'text' ? t.novel.preview : t.novel.structure}
-               </div>
+          <div className="flex-1 overflow-hidden">
+             {activeTab === 'edit' ? (
+               <div className="flex h-full p-8 gap-8">
+                  <div className="flex-1 glass-card rounded-[40px] p-8 flex flex-col border-white/5 overflow-hidden shadow-2xl relative">
+                     <div className="scan-line opacity-5"></div>
+                     <textarea 
+                        value={activeChapter.content} 
+                        onChange={(e) => updateChapter(activeChapter.id, { content: e.target.value })}
+                        className="flex-1 bg-transparent resize-none text-ink-100 leading-relaxed outline-none font-serif text-lg placeholder-ink-800"
+                        placeholder="粘贴原著文本..."
+                     />
+                  </div>
 
-               <div className="flex items-center gap-2">
-                 <div className="flex items-center bg-white border border-ink-200 rounded-lg p-0.5 mr-2">
-                    <button onClick={() => setPreviewMode('structure')} className={`p-1.5 rounded transition-colors ${previewMode === 'structure' ? 'bg-ink-100 text-ink-900' : 'text-ink-400 hover:text-ink-700'}`} title="结构视图"><LayoutTemplate size={14} /></button>
-                    <button onClick={() => setPreviewMode('text')} className={`p-1.5 rounded transition-colors ${previewMode === 'text' ? 'bg-ink-100 text-ink-900' : 'text-ink-400 hover:text-ink-700'}`} title="文本视图"><FileText size={14} /></button>
-                 </div>
-                 {activeChapter.convertedBlocks && activeChapter.convertedBlocks.length > 0 && (
-                   <button onClick={handleImportToScript} className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-ink-300 text-ink-700 rounded shadow-sm text-xs hover:bg-ink-50 hover:text-accent-600 font-medium transition-colors">
-                     <CheckCircle2 size={14} /> {t.novel.apply}
-                   </button>
-                 )}
+                  <div className="w-[380px] flex flex-col gap-4">
+                     <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5">
+                        <button onClick={() => setMetaView('script')} className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 ${metaView === 'script' ? 'bg-accent-500 text-white' : 'text-ink-500'}`}><Clapperboard size={14}/> 剧本</button>
+                        <button onClick={() => setMetaView('events')} className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 ${metaView === 'events' ? 'bg-accent-500 text-white' : 'text-ink-500'}`}><Flame size={14}/> 事件</button>
+                        <button onClick={() => setMetaView('characters')} className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 ${metaView === 'characters' ? 'bg-accent-500 text-white' : 'text-ink-500'}`}><Users size={14}/> 人物</button>
+                        <button onClick={() => setMetaView('storylines')} className={`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase transition-all flex items-center justify-center gap-2 ${metaView === 'storylines' ? 'bg-accent-500 text-white' : 'text-ink-500'}`}><GitMerge size={14}/> 故事线</button>
+                     </div>
+
+                     <div className="flex-1 glass-card rounded-[40px] p-6 border-white/5 overflow-y-auto scrollbar-hide shadow-xl">
+                        {renderMetaPanel()}
+                     </div>
+
+                     <button 
+                        onClick={() => {
+                           if (!activeChapter.convertedBlocks.length) return;
+                           update({ script: [...data.script, ...activeChapter.convertedBlocks.map(b => ({ ...b, id: crypto.randomUUID() }))] });
+                           alert("注入成功");
+                        }}
+                        className="w-full bg-white text-ink-950 py-4 rounded-[32px] font-bold text-xs uppercase tracking-widest hover:bg-accent-500 hover:text-white transition-all shadow-xl disabled:opacity-20"
+                        disabled={!activeChapter.convertedBlocks.length}
+                     >
+                        注入剧本时间轴
+                     </button>
+                  </div>
                </div>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-6">
-              {activeChapter.convertedBlocks && activeChapter.convertedBlocks.length > 0 ? (
-                previewMode === 'text' ? (
-                  <div className="bg-white shadow-lg p-8 min-h-full font-mono text-sm">
-                     {activeChapter.convertedBlocks.map(block => (
-                       <div key={block.id} className={getClassForType(block.type)}>
-                         {block.content}
-                       </div>
+             ) : (
+               <div className="h-full flex flex-col p-8 overflow-y-auto">
+                  <div className="mb-8 flex items-center gap-4">
+                     <Workflow className="text-accent-400" size={32} />
+                     <h3 className="text-2xl font-serif font-bold text-ink-100">神经网络映射流</h3>
+                  </div>
+                  <div className="space-y-12 max-w-2xl mx-auto pb-24">
+                     {(activeChapter.analysis?.events || []).map((event: any, i: number) => (
+                        <div key={i} className="flex gap-8 items-start group">
+                           <div className="flex flex-col items-center">
+                              <div className="w-12 h-12 rounded-full bg-ink-900 border border-orange-500/50 flex items-center justify-center font-mono font-bold text-orange-400 text-lg shadow-[0_0_15px_rgba(249,115,22,0.3)]">
+                                 {i + 1}
+                              </div>
+                              <div className="w-px h-24 bg-gradient-to-b from-orange-500/50 to-transparent"></div>
+                           </div>
+                           <div className="flex-1 bg-white/5 border border-white/5 p-6 rounded-[32px] hover:border-orange-500/30 transition-all shadow-xl">
+                              <div className="text-[9px] font-bold text-orange-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <Activity size={12} /> Beat Momentum
+                              </div>
+                              <h4 className="text-lg font-bold text-ink-100 mb-2">{event.title}</h4>
+                              <p className="text-xs text-ink-500 mb-4">{event.description}</p>
+                              <div className="h-1 bg-ink-800 rounded-full overflow-hidden">
+                                 <div className="h-full bg-orange-500 shadow-[0_0_8px_orange]" style={{ width: `${(event.tensionLevel || 5) * 10}%` }}></div>
+                              </div>
+                           </div>
+                        </div>
                      ))}
                   </div>
-                ) : (
-                  renderStructureView(activeChapter.convertedBlocks)
-                )
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center text-ink-400">
-                   <ArrowRight size={32} className="mb-2 opacity-30" />
-                   <p className="text-sm">点击 "转为剧本"</p>
-                </div>
-              )}
-            </div>
+               </div>
+             )}
           </div>
         </div>
       ) : (
-        <div className="flex-1 flex items-center justify-center bg-ink-50 text-ink-400">
-           <div className="text-center">
-             <BookText size={48} className="mx-auto mb-4 opacity-20" />
-             <p>{t.novel.addChapter}</p>
-           </div>
+        <div className="flex-1 flex items-center justify-center text-ink-800">
+           <Workflow size={80} className="opacity-10 animate-pulse" />
         </div>
       )}
     </div>
