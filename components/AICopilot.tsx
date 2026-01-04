@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { GeminiService } from '../services/geminiService';
-import { ProjectData, ModuleType, AIMessage, AppLanguage, ProjectAction, Character, CharacterRelationship, PlotEvent } from '../types';
-import { Sparkles, Send, Lightbulb, CheckCircle2, ArrowRightCircle, Users, Network, Bot } from 'lucide-react';
+import { ProjectData, ModuleType, AIMessage, AppLanguage, ProjectAction } from '../types';
+import { Sparkles, Send, Lightbulb, CheckCircle2, Bot, X } from 'lucide-react';
 import { getTranslation } from '../utils/translations';
 
 interface AICopilotProps {
@@ -10,12 +10,13 @@ interface AICopilotProps {
   activeModule: ModuleType;
   updateProject: (data: Partial<ProjectData>) => void;
   language: AppLanguage;
+  onClose?: () => void;
 }
 
-export const AICopilot: React.FC<AICopilotProps> = ({ projectData, activeModule, updateProject, language }) => {
+export const AICopilot: React.FC<AICopilotProps> = ({ projectData, activeModule, updateProject, language, onClose }) => {
   const t = getTranslation(language);
   const [messages, setMessages] = useState<AIMessage[]>([
-    { role: 'model', text: '你好！我是你的剧本创作助手。有什么可以帮你的吗？' }
+    { role: 'model', text: '你好！我是你的剧本创作副驾。我们可以聊聊原著拆解、人物建模或者剧情反转建议。' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -59,7 +60,7 @@ export const AICopilot: React.FC<AICopilotProps> = ({ projectData, activeModule,
           actionStatuses: {} 
       }]);
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'model', text: '抱歉，连接实验室服务器失败。' }]);
+      setMessages(prev => [...prev, { role: 'model', text: '抱歉，连接实验室服务器失败，请检查网络或 API Key。' }]);
     } finally {
       setIsLoading(false);
     }
@@ -83,32 +84,37 @@ export const AICopilot: React.FC<AICopilotProps> = ({ projectData, activeModule,
   };
 
   const handleApplyAction = (msgIndex: number, actionIndex: number, action: ProjectAction) => {
-    // Action logic remains the same...
-    // [Implementation omitted for brevity as it matches original functional logic]
+    // Action implementation placeholder
     setMessages(prev => prev.map((msg, i) => i === msgIndex ? { ...msg, actionStatuses: { ...(msg.actionStatuses || {}), [actionIndex]: 'applied' } } : msg));
   };
 
   return (
-    <div className="w-80 lg:w-96 bg-ink-900/50 backdrop-blur-xl border-l border-white/5 flex flex-col h-full shadow-2xl z-20">
-      <div className="h-16 border-b border-white/5 flex items-center px-6 bg-white/5">
-        <Bot className="text-accent-400 mr-2" size={20} />
-        <h2 className="font-serif font-bold text-ink-100 tracking-tight">AI 创作终端</h2>
+    <div className="w-80 lg:w-96 bg-ink-900/90 backdrop-blur-xl border-l border-ink-800 flex flex-col h-full shadow-2xl z-20">
+      <div className="h-16 border-b border-ink-800 flex items-center justify-between px-6 bg-ink-900/50">
+        <div className="flex items-center">
+            <Bot className="text-accent-500 mr-2" size={20} />
+            <h2 className="font-serif font-bold text-ink-100 tracking-tight">AI 创作副驾终端</h2>
+        </div>
+        {onClose && (
+            <button onClick={onClose} className="text-ink-500 hover:text-ink-100 p-1 rounded-md hover:bg-ink-800 transition-colors">
+                <X size={16} />
+            </button>
+        )}
       </div>
 
       <div className="bg-amber-500/10 p-4 border-b border-amber-500/20 flex items-start gap-3">
-        <Lightbulb className="text-amber-400 shrink-0 mt-0.5" size={16} />
-        <p className="text-[10px] text-amber-200/70 font-medium leading-relaxed uppercase tracking-wider">Lab Note: 建议在“人物建模”模块询问角色冲突建议。</p>
+        <Lightbulb className="text-amber-500 shrink-0 mt-0.5" size={16} />
+        <p className="text-[10px] text-amber-200/90 font-medium leading-relaxed uppercase tracking-wider">提示：随时可隐藏此终端，在左下角重新唤起。</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-transparent" ref={scrollRef}>
-        <div className="scan-line opacity-10"></div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-transparent custom-scrollbar" ref={scrollRef}>
         {messages.map((msg, msgIdx) => (
           <div key={msgIdx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start animate-fadeIn'}`}>
             <div 
               className={`max-w-[90%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-lg
                 ${msg.role === 'user' 
                   ? 'bg-accent-600 text-white rounded-br-none shadow-accent-900/20' 
-                  : 'bg-white/5 text-ink-100 border border-white/10 rounded-bl-none'}`}
+                  : 'bg-ink-800 text-ink-100 border border-ink-700 rounded-bl-none'}`}
             >
               {msg.text}
             </div>
@@ -125,7 +131,7 @@ export const AICopilot: React.FC<AICopilotProps> = ({ projectData, activeModule,
                             </div>
                             {msg.actionStatuses?.[actionIdx] === 'applied' ? (
                                  <div className="flex items-center justify-center gap-2 text-accent-400 text-xs font-bold py-2">
-                                     <CheckCircle2 size={14} /> 已同步至工作流
+                                     <CheckCircle2 size={14} /> 已同步至剧本工程
                                  </div>
                             ) : (
                                 <button 
@@ -143,7 +149,7 @@ export const AICopilot: React.FC<AICopilotProps> = ({ projectData, activeModule,
         ))}
         {isLoading && (
           <div className="flex justify-start">
-            <div className="bg-white/5 border border-white/10 rounded-2xl rounded-bl-none px-4 py-3">
+            <div className="bg-ink-800 border border-ink-700 rounded-2xl rounded-bl-none px-4 py-3">
               <div className="flex space-x-1">
                 <div className="w-1.5 h-1.5 bg-accent-500 rounded-full animate-pulse"></div>
                 <div className="w-1.5 h-1.5 bg-accent-500 rounded-full animate-pulse delay-75"></div>
@@ -154,14 +160,14 @@ export const AICopilot: React.FC<AICopilotProps> = ({ projectData, activeModule,
         )}
       </div>
 
-      <div className="p-4 bg-ink-950/50 border-t border-white/5">
+      <div className="p-4 bg-ink-900 border-t border-ink-800">
         <div className="relative">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-            placeholder="输入指令..."
-            className="w-full bg-white/5 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-sm text-white focus:outline-none focus:border-accent-500/50 resize-none h-20 transition-all"
+            placeholder="输入创作指令..."
+            className="w-full bg-ink-950 border border-ink-800 rounded-xl pl-4 pr-12 py-3 text-sm text-ink-100 focus:outline-none focus:border-accent-500/50 resize-none h-20 transition-all placeholder:text-ink-600"
           />
           <button
             onClick={handleSend}

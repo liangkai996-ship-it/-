@@ -66,7 +66,7 @@ export const TRANSLATIONS = {
       collapse: '收起', 
       generateBeats: 'AI 生成节奏/结构', 
       parseError: 'AI 生成格式错误，请重试', 
-      formats: { MOVIE: '电影 (90min+)', TV_SERIES: '电视剧 (45min/集)', MID_FORM_SERIES: '中剧 (15-20min/集)', SHORT_VIDEO: '短剧 (1-3min/集)', DYNAMIC_COMIC: '动态漫', ANIMATION: '动漫番剧' } 
+      formats: { MOVIE: '电影 (90min+)', TV_SERIES: '电视剧 (45min/集)', MID_FORM_SERIES: '中剧 (15-20min/集)', SHORT_VIDEO: '短剧/漫剧 (1-3min/集)' } 
     },
     plot: { title: '事件编排', subtitle: '可视化故事结构，时序化管理情节发展。', aiGenEvents: 'AI 生成事件', syncFromOutline: '从大纲同步场景', unassigned: '未归类事件', beats: '情感节拍', tension: '紧张度', genScript: '生成本集剧本', scriptGenerated: '剧本已生成并同步至正文', timelineView: '时序矩阵', mainPlot: '主线剧情', subPlotA: '支线 A', subPlotB: '支线 B', charArc: '人物弧光' },
     script: { import: '导入剧本', export: '导出剧本', aiContinue: 'AI 续写', insertAction: '插入动作', insertDialogue: '插入对话', selectRange: '选择范围', selectHint: '点击选择脚本块', cancelSelection: '取消选择' },
@@ -104,7 +104,7 @@ export const TRANSLATIONS = {
       collapse: 'Collapse', 
       generateBeats: 'AI Generate Beats', 
       parseError: 'AI Format Error, please retry', 
-      formats: { MOVIE: 'Movie (90min+)', TV_SERIES: 'TV Series (45min)', MID_FORM_SERIES: 'Mid-Form (15-20min)', SHORT_VIDEO: 'Short Video (1-3min)', DYNAMIC_COMIC: 'Dynamic Comic', ANIMATION: 'Animation' } 
+      formats: { MOVIE: 'Movie (90min+)', TV_SERIES: 'TV Series (45min)', MID_FORM_SERIES: 'Mid-Form (15-20min)', SHORT_VIDEO: 'Short Video/Comic Drama (1-3min)' } 
     },
     plot: { title: 'Plot Beats', subtitle: 'Structure visualization in a timeline matrix.', aiGenEvents: 'AI Generate Events', syncFromOutline: 'Sync from Outline', unassigned: 'Unassigned', beats: 'Beats', tension: 'Tension', genScript: 'Generate Script', scriptGenerated: 'Script generated and synced.', timelineView: 'Timeline Matrix', mainPlot: 'Main Plot', subPlotA: 'Subplot A', subPlotB: 'Subplot B', someValue: 'someValue' }
   }

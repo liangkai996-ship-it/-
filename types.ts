@@ -1,61 +1,145 @@
 
+export type AppLanguage = 'zh-CN' | 'zh-TW' | 'en';
+export type ThemeMode = 'light' | 'eye-care';
+export type AspectRatio = '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
+
 export enum ModuleType {
-  HUB = 'HUB',                 // 顶级入口（作品馆）
-  PROJECT_ANALYSIS = 'ANALYSIS', // 项目分析
-  ORIGINAL_STORY = 'ORIGINAL',   // 原创故事
-  NOVEL_ADAPTATION = 'ADAPT',    // 小说改编
-  
+  HUB = 'HUB',                 
+  PROJECT_ANALYSIS = 'ANALYSIS', 
+  ORIGINAL_STORY = 'ORIGINAL',   
+  NOVEL_ADAPTATION = 'ADAPT_NOVEL', 
   DASHBOARD = 'DASHBOARD',
-  NOVEL = 'NOVEL',
   CHARACTERS = 'CHARACTERS',
-  OUTLINE = 'OUTLINE',
-  PLOT = 'PLOT',
-  SCRIPT = 'SCRIPT',
-  DOCTOR = 'DOCTOR',
+  MARKET_ANALYSIS = 'MARKET_ANALYSIS',
+  STORYBOARD_PRODUCTION = 'STORYBOARD_PRODUCTION',
 }
 
-export enum ProductionStyle {
-  COMIC_DRAMA = 'COMIC_DRAMA',
-  MOTION_COMIC = 'MOTION_COMIC',
-  LIVE_ACTION = 'LIVE_ACTION'
+export interface AppNotification {
+  id: string;
+  title: string;
+  message?: string;
+  type: 'info' | 'success' | 'error' | 'loading';
+  duration?: number;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
-export enum OriginalSubModule {
-  LOGLINE = 'LOGLINE',
-  CHARACTERS = 'CHARACTERS',
-  OUTLINE = 'OUTLINE',
-  PLOT = 'PLOT',
-  SCRIPT = 'SCRIPT'
+export interface AIMessage {
+  role: 'user' | 'model';
+  text: string;
+  actions?: ProjectAction[];
+  actionStatuses?: Record<number, 'applied' | 'pending'>;
 }
 
-export type ThemeMode = 'day' | 'night';
-export type AppLanguage = 'zh-CN' | 'zh-TW' | 'en' | 'ko' | 'ja';
+export interface ProjectAction {
+  type: string;
+  description: string;
+  data: any;
+}
+
+export interface ProjectSnapshot {
+  id: string;
+  timestamp: number;
+  note: string;
+  data: string; 
+}
+
+export interface StoryboardRow {
+  id: string;
+  shotIndex: string;
+  sceneName: string;
+  character: string;
+  props: string; 
+  visualContent: string;
+  shotType: string;
+  movement: string;
+  sound: string;
+  dialogue: string;
+  duration: string;
+  aiPrompt: string; 
+}
+
+export interface PlotEvent {
+  id: string;
+  title: string;
+  description: string;
+  tension: number;
+  actId?: string;
+  plotline?: string;
+  emotions?: string; // Character emotions for this specific event
+}
+
+export interface PlotlineDefinition {
+  id: string;
+  label: string;
+  color: string; // Tailwind class string or hex
+  isRemovable?: boolean;
+}
+
+export interface CharacterRelationship {
+  id: string;
+  sourceId: string;
+  targetId: string;
+  label: string;
+  bidirectional?: boolean;
+}
+
+export interface Character {
+  id: string;
+  name: string;
+  role: string;
+  importance: number; 
+  description?: string;
+  age?: string;
+  origins?: { family: string; genes: string; background: string; };
+  stages?: { setup: string; struggle: string; resolution: string; };
+  mapPosition: { x: number; y: number };
+  visualDesign?: { clothing: string; pose: string };
+}
 
 export enum ScriptFormat {
   MOVIE = 'MOVIE',
   TV_SERIES = 'TV_SERIES',
   MID_FORM_SERIES = 'MID_FORM_SERIES',
-  SHORT_VIDEO = 'SHORT_VIDEO',
-  DYNAMIC_COMIC = 'DYNAMIC_COMIC',
-  ANIMATION = 'ANIMATION',
+  LIVE_ACTION_SHORT = 'LIVE_ACTION_SHORT', // 真人短剧 (2-3min)
+  COMIC_DRAMA = 'COMIC_DRAMA',             // 漫剧 (1.5-3min)
+  SHORT_VIDEO = 'SHORT_VIDEO',             // 短视频 (1min)
+}
+
+export enum ProductionStyle {
+  COMIC_DRAMA = 'COMIC_DRAMA',
+  MOTION_COMIC = 'MOTION_COMIC',
+  LIVE_ACTION = 'LIVE_ACTION',
+}
+
+export interface NovelAudit {
+  tropeInventory: { name: string; weight: number; description: string }[];
+  emotionalHeatmap: number[];
+}
+
+export interface AdaptationBlueprint {
+  pacingStrategy: string;
+  visualDirectives: { from: string; to: string }[];
 }
 
 export enum ScriptBlockType {
   SCENE_HEADING = 'SCENE_HEADING',
   ACTION = 'ACTION',
   CHARACTER = 'CHARACTER',
-  DIALOGUE = 'DIALOGUE',
   PARENTHETICAL = 'PARENTHETICAL',
+  DIALOGUE = 'DIALOGUE',
   TRANSITION = 'TRANSITION',
 }
 
 export enum ShotType {
-  EXTREME_LONG_SHOT = 'EXTREME_LONG_SHOT',
-  LONG_SHOT = 'LONG_SHOT',
-  FULL_SHOT = 'FULL_SHOT',
-  MEDIUM_SHOT = 'MEDIUM_SHOT',
-  CLOSE_UP = 'CLOSE_UP',
-  EXTREME_CLOSE_UP = 'EXTREME_CLOSE_UP',
+  EXTREME_LONG_SHOT = 'ELS',
+  LONG_SHOT = 'LS',
+  FULL_SHOT = 'FS',
+  MEDIUM_SHOT = 'MS',
+  CLOSE_UP = 'CU',
+  EXTREME_CLOSE_UP = 'ECU',
 }
 
 export enum CameraAngle {
@@ -78,19 +162,17 @@ export enum CameraMovement {
   ZOOM = 'ZOOM',
 }
 
-export type AspectRatio = '1:1' | '3:4' | '4:3' | '9:16' | '16:9';
-
 export interface StoryboardData {
   shotType: ShotType;
   cameraAngle: CameraAngle;
-  cameraMovement?: CameraMovement;
-  aspectRatio?: AspectRatio;
+  cameraMovement: CameraMovement;
+  aspectRatio: AspectRatio;
   customFrameRatio?: number;
   focalLength?: string;
   visualDescription: string;
   imagePrompt: string;
   soundDesign?: string;
-  generatedImage?: string;
+  generatedImage?: string; 
   isLongTake?: boolean;
   startFrameDescription?: string;
   endFrameDescription?: string;
@@ -104,81 +186,104 @@ export interface ScriptBlock {
   storyboard?: StoryboardData;
 }
 
-export interface Character {
-  id: string;
-  name: string;
-  role: string;
-  age: string;
-  description: string;
-  goal: string;
-  conflict: string;
-  arc: string;
-  mapPosition: { x: number; y: number };
-  visualDesign?: {
-    clothing: string;
-    pose: string;
-    expression: string;
-    style?: string;
-    image?: string;
-  };
-}
-
-export interface CharacterRelationship {
-  id: string;
-  sourceId: string;
-  targetId: string;
-  label: string;
-}
-
 export interface OutlineScene {
   id: string;
   title: string;
   summary: string;
+  visualKeywords?: string; 
+  hook?: string;          
 }
 
 export interface DoctorAnalysis {
   emotions: number[];
-  infoDensity: number[];
   plotDensity: number[];
   diagnosis: string;
-  suggestions: Array<{
-    id: string;
-    target: string;
-    advice: string;
-    revision: string;
-  }>;
+  suggestions: { advice: string; revision: string }[];
 }
 
 export interface OutlineSection {
   id: string;
   title: string;
-  tips: string;
   content: string;
   scenes: OutlineScene[];
+  tips?: string;
   doctorAnalysis?: DoctorAnalysis;
+  visualKeywords?: string;
+  emotionalArc?: string; // New field for character emotion analysis
 }
 
-export interface PlotEvent {
+export interface DramaStage {
   id: string;
-  actId?: string;
-  plotline: string;
-  title: string;
-  description: string;
-  tensionLevel: number;
+  range: string;
+  label: string;
+  strategy: string;
+}
+
+export enum OriginalSubModule {
+  LOGLINE = 'LOGLINE',
+  CHARACTERS = 'CHARACTERS',
+  PLOT = 'PLOT',
+  SCRIPT = 'SCRIPT',
+  OUTLINE = 'OUTLINE', 
 }
 
 export interface NovelChapter {
   id: string;
-  title: string;
+  index: number;
+  rawContent: string;
+  summary: string; 
+  keyElements?: string[];
+}
+
+export interface ProjectMetadata {
+  sourceType: 'original' | 'adaptation' | 'storyboard' | 'market_analysis';
+  targetAudience: string;
+  projectHighlights: string;
+  marketBenchmark: string;
+}
+
+export interface NovelUploadChunk {
+  id: string;
+  fileName: string;
   content: string;
-  convertedBlocks: ScriptBlock[];
-  analysis?: {
-    summary: string;
-    themes: string[];
-    characters: Array<{ name: string; role: string; trait: string }>;
-    storylines: string[];
-    events: Array<{ title: string; description: string; tensionLevel: number }>;
-  };
+  wordCount: number;
+  uploadTime: number;
+  aiSummary?: string; 
+}
+
+export interface AnalysisCharacter {
+  id: string;
+  name: string;
+  tagline: string; 
+  archetype: string; 
+  description: string;
+  traits: string[]; 
+  relationship: string; 
+}
+
+export interface NovelDeepAnalysis {
+  worldView: string; 
+  mainPlot: string;  
+  characterProfiles: string; 
+  characterCards?: AnalysisCharacter[]; 
+  commercialVerdict?: string; 
+}
+
+export interface AdaptationBeat {
+  name: string; 
+  description: string;
+  type: 'hook' | 'reversal' | 'climax' | 'normal';
+}
+
+export interface AdaptationEpisode {
+  id: string;
+  episodeNumber: number;
+  title: string;
+  summary: string;
+  characters: string[];
+  events: string[];
+  emotions: string[];
+  beats: AdaptationBeat[];
 }
 
 export interface ProjectData {
@@ -186,33 +291,33 @@ export interface ProjectData {
   title: string;
   logline: string;
   genre: string;
-  coverImage?: string; // Base64 or URL
   updatedAt: number;
-  productionStyle?: ProductionStyle;
   scriptFormat?: ScriptFormat;
-  marketAnalysis: {
-    targetAudience: string;
-    marketPositioning: string;
-    commercialsellingPoints: string;
+  
+  metadata: ProjectMetadata;
+
+  novelSource?: 'file' | 'library';
+  novelFullText: string; 
+  novelUploadChunks?: NovelUploadChunk[]; 
+  novelDeepAnalysis?: NovelDeepAnalysis; 
+  novelAdaptationPlan?: AdaptationEpisode[]; 
+  
+  novelChapters: NovelChapter[]; 
+  novelAudit?: NovelAudit;
+  adaptationBlueprint?: AdaptationBlueprint;
+  novelAnalysis?: {
+    mainPlotSummary: string;
+    stages: DramaStage[];
   };
-  novelChapters: NovelChapter[];
+  
   characters: Character[];
   relationships: CharacterRelationship[];
-  totalOutline: string;
+  script: ScriptBlock[];
   outline: OutlineSection[];
   plotEvents: PlotEvent[];
-  script: ScriptBlock[];
-}
-
-export interface ProjectAction {
-  type: 'ADD_CHARACTER' | 'ADD_CHARACTERS_BATCH' | 'UPDATE_RELATIONSHIPS' | 'UPDATE_OUTLINE_SECTION' | 'UPDATE_LOGLINE' | 'ADD_PLOT_EVENT';
-  description: string;
-  data: any;
-}
-
-export interface AIMessage {
-  role: 'user' | 'model';
-  text: string;
-  actions?: ProjectAction[];
-  actionStatuses?: { [key: number]: 'pending' | 'applied' | 'ignored' };
+  definedPlotlines?: PlotlineDefinition[]; // New: Customizable plotlines
+  totalOutline: string;
+  storyboardRows: StoryboardRow[]; 
+  snapshots?: ProjectSnapshot[];
+  productionStyle?: ProductionStyle;
 }

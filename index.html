@@ -6,34 +6,50 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>神笔马良 - 智能剧本创作平台</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Inter:wght@300;400;600&family=Courier+Prime&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;700&family=Inter:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              serif: ['"Noto Serif SC"', 'serif'],
+              sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+              serif: ['"Noto Serif SC"', 'Georgia', 'serif'],
               mono: ['"Courier Prime"', 'Courier', 'monospace'],
             },
             colors: {
               ink: {
-                50: 'var(--ink-50)',
-                100: 'var(--ink-100)',
-                200: 'var(--ink-200)',
-                300: 'var(--ink-300)',
-                400: 'var(--ink-400)',
-                500: 'var(--ink-500)', 
-                600: 'var(--ink-600)',
-                700: 'var(--ink-700)',
-                800: 'var(--ink-800)',
-                900: 'var(--ink-900)',
-                950: 'var(--ink-950)',
+                50: 'var(--ink-50)',   // Darkest Text
+                100: 'var(--ink-100)', // Main Text
+                200: 'var(--ink-200)', // Secondary Text
+                300: 'var(--ink-300)', // Muted Text
+                400: 'var(--ink-400)', // Disabled/Hint
+                500: 'var(--ink-500)', // Border/Divider
+                600: 'var(--ink-600)', // Border Light
+                700: 'var(--ink-700)', // Surface Hover
+                800: 'var(--ink-800)', // Surface Element (Card Border)
+                900: 'var(--ink-900)', // Surface Background (Sidebar)
+                950: 'var(--ink-950)', // Main Background
               },
               accent: {
                 400: 'var(--accent-400)',
                 500: 'var(--accent-500)', 
                 600: 'var(--accent-600)',
+              }
+            },
+            animation: {
+              fadeIn: 'fadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+              slideDown: 'slideDown 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(10px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              slideDown: {
+                '0%': { opacity: '0', height: '0' },
+                '100%': { opacity: '1', height: 'auto' },
               }
             }
           }
@@ -42,88 +58,86 @@
     </script>
     <style>
       :root {
-        /* Night Mode (Tech-Noir) */
-        --ink-50: #f8fafc;   /* 最淡色 */
-        --ink-100: #f1f5f9;  /* 正文色 */
-        --ink-200: #cbd5e1;  /* 辅助文字 */
-        --ink-300: #64748b;  /* 禁用色 */
-        --ink-400: #475569;  /* 边框色 */
-        --ink-500: #334155;
-        --ink-600: #1e293b;
-        --ink-700: #0f172a;
-        --ink-800: #020617;  /* 卡片底色 */
-        --ink-900: #020617;  /* 侧边栏 */
-        --ink-950: #020617;  /* 页面底色 */
-        --accent-400: #34d399;
-        --accent-500: #10b981;
-        --accent-600: #059669;
-        --glass-bg: rgba(15, 23, 42, 0.7);
-        --glass-border: rgba(255, 255, 255, 0.05);
-        --shadow-main: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+        /* Default: Modern Light (Clean White) */
+        /* Note: We invert standard scale naming to map logical roles used in codebase */
+        /* 950 = Background, 100 = Text */
+        
+        --ink-950: #ffffff;        /* Main BG */
+        --ink-900: #f8fafc;        /* Sidebar/Surface BG (Slate-50) */
+        --ink-800: #e2e8f0;        /* Card Borders (Slate-200) */
+        --ink-700: #f1f5f9;        /* Hover States */
+        --ink-600: #cbd5e1;        /* Muted Borders */
+        --ink-500: #94a3b8;        /* Muted Text / Icons */
+        --ink-400: #64748b;        /* Hints */
+        --ink-300: #475569;        /* Secondary Text */
+        --ink-200: #334155;        /* Primary Text */
+        --ink-100: #1e293b;        /* Headings (Slate-800) */
+        --ink-50:  #020617;        /* Pure Black Text */
+
+        /* Vibrant Blue/Violet for Light Mode */
+        --accent-400: #818cf8; 
+        --accent-500: #6366f1;     /* Indigo-500 */
+        --accent-600: #4f46e5;     /* Indigo-600 */
+
+        --glass-bg: rgba(255, 255, 255, 0.7);
+        --glass-border: rgba(0, 0, 0, 0.05);
+        --shadow-main: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
       }
 
-      .theme-day {
-        /* Day Mode (E-Ink Paper) */
-        --ink-50: #020617;   /* 最深色（映射反转） */
-        --ink-100: #111827;  /* 主要标题 */
-        --ink-200: #374151;  /* 正文 */
-        --ink-300: #4b5563;  /* 辅助 */
-        --ink-400: #6b7280;  /* 较淡文字 */
-        --ink-500: #9ca3af;
-        --ink-600: #d1d5db;  /* 辅助边框 */
-        --ink-700: #e5e7eb;  /* 边框 */
-        --ink-800: #f3f4f6;  /* 卡片底色 */
-        --ink-900: #ffffff;  /* 侧边栏/浮层 */
-        --ink-950: #fcfaf7;  /* 温暖页面底色 */
-        --accent-400: #059669;
-        --accent-500: #065f46;
-        --accent-600: #064e3b;
-        --glass-bg: rgba(255, 255, 255, 0.95);
-        --glass-border: rgba(0, 0, 0, 0.1);
-        --shadow-main: 0 10px 40px rgba(0, 0, 0, 0.08);
+      .theme-eye-care {
+        /* Eye Care: Warm Paper / Sepia */
+        --ink-950: #F7F5EE;        /* Warm Paper BG */
+        --ink-900: #EFEDE4;        /* Darker Paper (Sidebar) */
+        --ink-800: #E0DCCB;        /* Borders */
+        --ink-700: #EBE7DA;        /* Hover */
+        --ink-600: #C2BCA8;        
+        --ink-500: #9C9482;        /* Icons */
+        --ink-400: #857D6B;
+        --ink-300: #696253;
+        --ink-200: #544E41;
+        --ink-100: #423D33;        /* Warm Dark Brown Text */
+        --ink-50:  #2B261D;
+
+        /* Soothing Amber/Clay for Eye Care */
+        --accent-400: #d97706; 
+        --accent-500: #b45309; 
+        --accent-600: #92400e;
+
+        --glass-bg: rgba(247, 245, 238, 0.8);
+        --glass-border: rgba(92, 64, 5, 0.08);
+        --shadow-main: 0 10px 30px -10px rgba(92, 64, 5, 0.08);
       }
 
       body {
-        background: var(--ink-950);
+        background-color: var(--ink-950);
         color: var(--ink-100);
-        transition: background 0.4s ease, color 0.4s ease;
+        transition: background-color 0.5s ease, color 0.5s ease;
       }
 
-      .glass-card {
-        background: var(--glass-bg);
-        backdrop-filter: blur(12px);
-        border: 1px solid var(--glass-border);
-        box-shadow: var(--shadow-main);
-        transition: all 0.3s ease;
+      /* Global Input Reset */
+      input, textarea, select {
+        background-color: transparent;
+        color: var(--ink-100);
+        border-color: var(--ink-800);
       }
       
-      .theme-night .glass-card:hover {
-        border-color: rgba(16, 185, 129, 0.2);
+      input::placeholder, textarea::placeholder {
+        color: var(--ink-500);
       }
 
-      /* 重置所有输入框在白天模式下的对比度 */
-      .theme-day input, .theme-day textarea, .theme-day select {
-        color: var(--ink-100) !important;
+      /* Glassmorphism utility */
+      .glass-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--shadow-main);
       }
-      .theme-day ::placeholder {
-        color: var(--ink-400) !important;
-      }
-
-      /* 科技感动画 */
-      @keyframes scan {
-        0% { transform: translateY(-100%); }
-        100% { transform: translateY(100%); }
-      }
-      .scan-line {
-        background: linear-gradient(to bottom, transparent, var(--accent-400), transparent);
-        height: 100px;
-        width: 100%;
-        position: absolute;
-        animation: scan 4s linear infinite;
-        pointer-events: none;
-        opacity: 0.1;
-      }
-      .theme-day .scan-line { display: none; }
+      
+      .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--ink-800); border-radius: 99px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--ink-500); }
     </style>
   <script type="importmap">
 {
@@ -137,7 +151,7 @@
 }
 </script>
 </head>
-  <body class="font-sans antialiased overflow-hidden h-screen theme-night">
+  <body class="font-sans antialiased overflow-hidden h-screen theme-light transition-colors duration-500">
     <div id="root"></div>
   </body>
 </html>

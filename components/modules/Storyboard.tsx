@@ -57,7 +57,7 @@ const COMMUNICATION_PRESETS = [
 export const StoryboardModule: React.FC<StoryboardProps> = ({ data, update, language }) => {
   const t = getTranslation(language);
   const [loadingState, setLoadingState] = useState<Record<string, 'prompt' | 'image' | null>>({});
-  const [globalStyle, setGlobalStyle] = useState("Cinematic, High Detail, Movie Still");
+  const [globalStyle, setGlobalStyle] = useState("");
   
   // Upload State
   const fileInputRef = useRef<HTMLInputElement>(null);
